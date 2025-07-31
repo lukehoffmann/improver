@@ -19,9 +19,8 @@ from improver.calibration.rainforest_calibration import (
     ApplyRainForestsCalibrationTreelite,
 )
 from improver.calibration.rainforest_training import (
-    # TrainRainforestsModel,
-    compile_models,
-    train_models,
+    TrainRainForestsCalibrationLightGBM,
+    TrainRainForestsCalibrationTreelite,
 )
 from improver.metadata.utilities import (
     create_new_diagnostic_cube,
@@ -249,7 +248,8 @@ def dummy_lightgbm_models(ensemble_features, ensemble_forecast, lead_times, thre
     training_data, fcst_column, obs_column, train_columns = prepare_dummy_training_data(
         ensemble_features, ensemble_forecast, lead_times
     )
-    tree_models = train_models(
+    trainer = TrainRainForestsCalibrationLightGBM()
+    tree_models = trainer.train_models(
         training_data, obs_column, train_columns, lead_times, thresholds
     )
 
@@ -261,7 +261,8 @@ def dummy_treelite_models(dummy_lightgbm_models, tmp_path):
     """Create sample treelite models for evaluating forecast probabilities."""
 
     lightgbm_models, lead_times, thresholds = dummy_lightgbm_models
-    tree_models = compile_models(lightgbm_models, lead_times, thresholds, tmp_path)
+    trainer = TrainRainForestsCalibrationTreelite()
+    tree_models = trainer.compile_models(lightgbm_models, lead_times, thresholds, tmp_path)
     return tree_models, lead_times, thresholds
 
 
@@ -307,7 +308,8 @@ def dummy_lightgbm_models_deterministic(
     training_data, fcst_column, obs_column, train_columns = prepare_dummy_training_data(
         deterministic_features, deterministic_forecast, lead_times
     )
-    tree_models = train_models(
+    trainer = TrainRainForestsCalibrationLightGBM()
+    tree_models = trainer.train_models(
         training_data, obs_column, train_columns, lead_times, thresholds
     )
     return tree_models, lead_times, thresholds
@@ -317,8 +319,9 @@ def dummy_lightgbm_models_deterministic(
 def dummy_treelite_models_deterministic(dummy_lightgbm_models_deterministic, tmp_path):
     """Create sample treelite models for evaluating forecast probabilities."""
 
+    trainer = TrainRainForestsCalibrationTreelite()
     lightgbm_models, lead_times, thresholds = dummy_lightgbm_models_deterministic
-    tree_models = compile_models(lightgbm_models, lead_times, thresholds, tmp_path)
+    tree_models = trainer.compile_models(lightgbm_models, lead_times, thresholds, tmp_path)
     return tree_models, lead_times, thresholds
 
 
