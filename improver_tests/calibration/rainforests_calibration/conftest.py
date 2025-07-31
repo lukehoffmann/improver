@@ -18,6 +18,11 @@ from improver.calibration.rainforest_calibration import (
     ApplyRainForestsCalibrationLightGBM,
     ApplyRainForestsCalibrationTreelite,
 )
+from improver.calibration.rainforest_training import (
+    # TrainRainforestsModel,
+    compile_models,
+    train_models,
+)
 from improver.metadata.utilities import (
     create_new_diagnostic_cube,
     generate_mandatory_attributes,
@@ -238,60 +243,17 @@ def prepare_dummy_training_data(features, forecast, lead_times):
     return training_data, fcst_column, obs_column, train_columns
 
 
-def train_models(training_data, obs_column, train_columns, thresholds, lead_times):
-    """Train a model for each threshold."""
-    import lightgbm
-
-    tree_models = {}
-    params = {"objective": "binary", "num_leaves": 5, "verbose": -1, "seed": 0}
-    for lead_time in lead_times:
-        for threshold in thresholds:
-            curr_training_data = training_data.loc[
-                training_data["lead_time_hours"] == lead_time
-            ]
-            data = lightgbm.Dataset(
-                curr_training_data[train_columns],
-                label=(curr_training_data[obs_column] >= threshold).astype(int),
-            )
-            booster = lightgbm.train(params, data, num_boost_round=10)
-            tree_models[lead_time, threshold] = booster
-    return tree_models
-
-
 @pytest.fixture
-def dummy_lightgbm_models(ensemble_features, ensemble_forecast, thresholds, lead_times):
+def dummy_lightgbm_models(ensemble_features, ensemble_forecast, lead_times, thresholds):
     """Create sample lightgbm models for evaluating forecast probabilities."""
     training_data, fcst_column, obs_column, train_columns = prepare_dummy_training_data(
         ensemble_features, ensemble_forecast, lead_times
     )
     tree_models = train_models(
-        training_data, obs_column, train_columns, thresholds, lead_times
+        training_data, obs_column, train_columns, lead_times, thresholds
     )
 
     return tree_models, lead_times, thresholds
-
-
-def compile_models(lightgbm_models, lead_times, thresholds, tmp_path):
-    """Compile lightgbm models."""
-    import treelite
-    import treelite_runtime
-
-    tree_models = {}
-    for lead_time in lead_times:
-        for threshold in thresholds:
-            model = lightgbm_models[lead_time, threshold]
-            treelite_model = treelite.Model.from_lightgbm(model)
-            treelite_model.export_lib(
-                toolchain="gcc",
-                libpath=str(tmp_path / "model.so"),
-                verbose=False,
-                params={"parallel_comp": 8, "quantize": 1},
-            )
-            predictor = treelite_runtime.Predictor(
-                str(tmp_path / "model.so"), verbose=True, nthread=1
-            )
-            tree_models[lead_time, threshold] = predictor
-    return tree_models
 
 
 @pytest.fixture
@@ -339,14 +301,14 @@ def lightgbm_model_files(dummy_lightgbm_models, model_config):
 
 @pytest.fixture
 def dummy_lightgbm_models_deterministic(
-    deterministic_features, deterministic_forecast, thresholds, lead_times
+    deterministic_features, deterministic_forecast, lead_times, thresholds
 ):
     """Create sample lightgbm models for evaluating forecast probabilities."""
     training_data, fcst_column, obs_column, train_columns = prepare_dummy_training_data(
         deterministic_features, deterministic_forecast, lead_times
     )
     tree_models = train_models(
-        training_data, obs_column, train_columns, thresholds, lead_times
+        training_data, obs_column, train_columns, lead_times, thresholds
     )
     return tree_models, lead_times, thresholds
 
