@@ -35,27 +35,12 @@ from improver.metadata.utilities import (
     generate_mandatory_attributes,
 )
 from improver.utilities.cube_manipulation import add_coordinate_to_cube, compare_coords
+from improver.calibration import (
+    treelite_packages_available,
+    lightgbm_package_available,
+)
 
 Model = Literal["lightgbm_model", "treelite_model"]
-
-
-def treelite_packages_available():
-    """Return True if treelite packages are available, False otherwise."""
-    try:
-        import tl2cgen  # noqa: F401
-        import treelite  # noqa: F401
-    except ModuleNotFoundError:
-        return False
-    return True
-
-
-def lightgbm_package_available():
-    """Return True if LightGBM package is available, False otherwise."""
-    try:
-        import lightgbm  # noqa: F401
-    except ModuleNotFoundError:
-        return False
-    return True
 
 
 class ModelFileNotFoundError(Exception):

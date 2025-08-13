@@ -17,6 +17,25 @@ from improver.metadata.probabilistic import (
 from improver.utilities.cube_manipulation import MergeCubes
 
 
+def treelite_packages_available():
+    """Return True if treelite packages are available, False otherwise."""
+    try:
+        import tl2cgen  # noqa: F401
+        import treelite  # noqa: F401
+    except ModuleNotFoundError:
+        return False
+    return True
+
+
+def lightgbm_package_available():
+    """Return True if LightGBM package is available, False otherwise."""
+    try:
+        import lightgbm  # noqa: F401
+    except ModuleNotFoundError:
+        return False
+    return True
+
+
 def split_forecasts_and_truth(
     cubes: List[Cube], truth_attribute: str
 ) -> Tuple[Cube, Cube, Optional[Cube]]:
