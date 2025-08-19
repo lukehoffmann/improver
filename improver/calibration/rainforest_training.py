@@ -27,7 +27,7 @@ class TrainRainForestsCalibration:
         self.output_path = output_path
 
         self.config = {
-            self.lead_time_key(l): {self.threshold_key(t): {} for t in self.thresholds}
+            self._lead_time_key(l): {self._threshold_key(t): {} for t in self.thresholds}
             for l in self.lead_times
         }
 
@@ -38,13 +38,16 @@ class TrainRainForestsCalibration:
         )
         return self.config
 
-    def lead_time_key(self, lead_time):
+    def _get_config(self, lead_time, threshold):
+        return self.config[self._lead_time_key(lead_time)][self._threshold_key(threshold)]
+
+    def _lead_time_key(self, lead_time):
         return f"{lead_time:02d}"
 
-    def threshold_key(self, threshold):
+    def _threshold_key(self, threshold):
         return f"{threshold:06.4f}"
 
-    def model_filename(self, lead_time, threshold, extension):
+    def _model_filename(self, lead_time, threshold, extension):
         return f"{lead_time:03d}H_{threshold:06.4f}.{extension}"
 
 
@@ -66,16 +69,15 @@ class TrainRainForestsCalibrationLightGBM(TrainRainForestsCalibration):
         os.makedirs(output_path, exist_ok=True)
 
         for lead_time in self.lead_times:
-            lkey = self.lead_time_key(lead_time)
             for threshold in self.thresholds:
-                tkey = self.threshold_key(threshold)
+                config = self._get_config(lead_time, threshold)
 
-                filepath = output_path / self.model_filename(lead_time, threshold, "txt")
+                filepath = output_path / self._model_filename(lead_time, threshold, "txt")
                 model = self._train_model(
                     training_data, obs_column, train_columns, lead_time, threshold
                 )
                 model.save_model(filepath)
-                self.config[lkey][tkey]["lightgbm_model"] = str(filepath)
+                config["lightgbm_model"] = str(filepath)
 
         return self.config
 
@@ -100,9 +102,8 @@ class TrainRainForestsCalibrationLightGBM(TrainRainForestsCalibration):
     def _get_model(self, lead_time, threshold):
         import lightgbm
 
-        lkey = self.lead_time_key(lead_time)
-        tkey = self.threshold_key(threshold)
-        lightgbm_model_filepath = self.config[lkey][tkey]['lightgbm_model']
+        config = self._get_config(lead_time, threshold)
+        lightgbm_model_filepath = config['lightgbm_model']
         return lightgbm.Booster(model_file=lightgbm_model_filepath)
 
 class TrainRainForestsCalibrationTreelite(TrainRainForestsCalibrationLightGBM):
@@ -121,14 +122,13 @@ class TrainRainForestsCalibrationTreelite(TrainRainForestsCalibrationLightGBM):
         os.makedirs(output_path, exist_ok=True)
 
         for lead_time in self.lead_times:
-            lkey = self.lead_time_key(lead_time)
             for threshold in self.thresholds:
-                tkey = self.threshold_key(threshold)
+                config = self._get_config(lead_time, threshold)
 
                 lightgbm_model = self._get_model(lead_time, threshold)
-                path = output_path / self.model_filename(lead_time, threshold, "so")
+                path = output_path / self._model_filename(lead_time, threshold, "so")
                 self._compile_model(lightgbm_model, path)
-                self.config[lkey][tkey]["treelite_model"] = str(path)
+                config["treelite_model"] = str(path)
 
         return self.config
 
