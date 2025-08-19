@@ -25,6 +25,10 @@ from iris.cube import Cube, CubeList
 from numpy import ndarray
 
 from improver import PostProcessingPlugin
+from improver.calibration import (
+    lightgbm_package_available,
+    treelite_packages_available,
+)
 from improver.constants import MINUTES_IN_HOUR, SECONDS_IN_MINUTE
 from improver.ensemble_copula_coupling.utilities import (
     get_bounds_of_distribution,
@@ -35,10 +39,6 @@ from improver.metadata.utilities import (
     generate_mandatory_attributes,
 )
 from improver.utilities.cube_manipulation import add_coordinate_to_cube, compare_coords
-from improver.calibration import (
-    treelite_packages_available,
-    lightgbm_package_available,
-)
 
 Model = Literal["lightgbm_model", "treelite_model"]
 
@@ -104,8 +104,8 @@ class ApplyRainForestsCalibration(PostProcessingPlugin):
         and an associated path has been provided for all thresholds, otherwise LightGBM
         Boosters are used as the default tree model type.
         """
-        treelite_available = treelite_packages_available()
         lightgbm_available = lightgbm_package_available()
+        treelite_available = treelite_packages_available()
         if not treelite_available and not lightgbm_available:
             raise ModuleNotFoundError("Could not find treelite or LightGBM modules")
         if treelite_available:

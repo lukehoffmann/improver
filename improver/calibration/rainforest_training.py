@@ -1,3 +1,7 @@
+# (C) Crown Copyright, Met Office. All rights reserved.
+#
+# This file is part of 'IMPROVER' and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
 import os
 
 from improver.calibration import (
@@ -10,8 +14,8 @@ class TrainRainForestsCalibration:
     # pass
     def __new__(cls, lead_times, thresholds, output_path):
         """Initialise class object based on package availability."""
-        treelite_available = treelite_packages_available()
         lightgbm_available = lightgbm_package_available()
+        treelite_available = treelite_packages_available()
         if not lightgbm_available:
             raise ModuleNotFoundError("Could not find tLightGBM module")
 
@@ -27,7 +31,9 @@ class TrainRainForestsCalibration:
         self.output_path = output_path
 
         self.config = {
-            self._lead_time_key(l): {self._threshold_key(t): {} for t in self.thresholds}
+            self._lead_time_key(l): {
+                self._threshold_key(t): {} for t in self.thresholds
+            }
             for l in self.lead_times
         }
 
@@ -39,7 +45,9 @@ class TrainRainForestsCalibration:
         return self.config
 
     def _get_config(self, lead_time, threshold):
-        return self.config[self._lead_time_key(lead_time)][self._threshold_key(threshold)]
+        return self.config[self._lead_time_key(lead_time)][
+            self._threshold_key(threshold)
+        ]
 
     def _lead_time_key(self, lead_time):
         return f"{lead_time:02d}"
@@ -72,7 +80,9 @@ class TrainRainForestsCalibrationLightGBM(TrainRainForestsCalibration):
             for threshold in self.thresholds:
                 config = self._get_config(lead_time, threshold)
 
-                filepath = output_path / self._model_filename(lead_time, threshold, "txt")
+                filepath = output_path / self._model_filename(
+                    lead_time, threshold, "txt"
+                )
                 model = self._train_model(
                     training_data, obs_column, train_columns, lead_time, threshold
                 )
@@ -98,13 +108,13 @@ class TrainRainForestsCalibrationLightGBM(TrainRainForestsCalibration):
 
         return lightgbm.train(self.lightgbm_params, data)
 
-
     def _get_model(self, lead_time, threshold):
         import lightgbm
 
         config = self._get_config(lead_time, threshold)
-        lightgbm_model_filepath = config['lightgbm_model']
+        lightgbm_model_filepath = config["lightgbm_model"]
         return lightgbm.Booster(model_file=lightgbm_model_filepath)
+
 
 class TrainRainForestsCalibrationTreelite(TrainRainForestsCalibrationLightGBM):
     treelight_params = {"parallel_comp": 8, "quantize": 1}
@@ -116,8 +126,6 @@ class TrainRainForestsCalibrationTreelite(TrainRainForestsCalibrationLightGBM):
         TrainRainForestsCalibrationLightGBM.process(
             self, training_data, obs_column, train_columns
         )
-        import lightgbm
-
         output_path = self.output_path / "treelite_models"
         os.makedirs(output_path, exist_ok=True)
 

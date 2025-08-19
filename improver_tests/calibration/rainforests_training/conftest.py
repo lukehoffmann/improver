@@ -1,24 +1,32 @@
+# (C) Crown Copyright, Met Office. All rights reserved.
+#
+# This file is part of 'IMPROVER' and is released under the BSD 3-Clause license.
+# See LICENSE in the root of the repository for full licensing details.
 import sys
 
 import pytest
-import numpy as np
 
-from improver.calibration import (
-    treelite_packages_available,
-    lightgbm_package_available,
-)
+from improver.calibration import treelite_packages_available
 
 from ..rainforests_calibration.conftest import (
-    lead_times,
-    thresholds,
-    generate_aligned_feature_cubes,
-    generate_forecast_cubes,
     deterministic_features,
     deterministic_forecast,
     ensemble_features,
     ensemble_forecast,
+    lead_times,
     prepare_dummy_training_data,
+    thresholds,
 )
+
+_ = (
+    lead_times,
+    thresholds,
+    deterministic_features,
+    deterministic_forecast,
+    ensemble_features,
+    ensemble_forecast,
+)
+
 
 @pytest.fixture
 def treelite_available(available, monkeypatch):
@@ -31,7 +39,7 @@ def treelite_available(available, monkeypatch):
 @pytest.fixture
 def deterministic_training_data(
     deterministic_features, deterministic_forecast, lead_times
-    ):
+):
     return prepare_dummy_training_data(
         deterministic_features, deterministic_forecast, lead_times
     )
