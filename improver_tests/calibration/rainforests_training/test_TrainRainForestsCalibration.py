@@ -12,15 +12,15 @@ from improver.calibration.rainforest_training import (
 
 
 @pytest.mark.parametrize("available", [True, False])
-def test__new__(treelite_available):
+def test__new__(treelite_available, tmp_path):
     """Test treelight class is created if treelight libraries are available."""
 
     if treelite_available:
-        expected_class = "TrainRainForestsCalibrationTreelite"
+        expected_class = "TrainRainForestsCalibration"
     else:
-        expected_class = "TrainRainForestsCalibrationLightGBM"
+        expected_class = "TrainRainForestsCalibration"
 
-    result = TrainRainForestsCalibration([], [], "")
+    result = TrainRainForestsCalibration([], [], "", [], tmp_path)
     assert type(result).__name__ == expected_class
 
 
@@ -28,16 +28,30 @@ def test__new__(treelite_available):
 def test__init__(treelite_available, tmp_path):
     """Test class is created with lead times and thresholds."""
 
-    result = TrainRainForestsCalibration([24, 12], [0.1, 0.05, 0.01], tmp_path)
+    result = TrainRainForestsCalibration(
+        [24, 12],
+        [0.1, 0.05, 0.01],
+        "column1",
+        ["column2", "column3", "column4"],
+        tmp_path,
+    )
     assert result.lead_times == [24, 12]
     assert result.thresholds == [0.1, 0.0500, 0.0100]
+    assert result.obs_column == "column1"
+    assert result.train_columns == ["column2", "column3", "column4"]
 
 
 @pytest.mark.parametrize("available", [True, False])
 def test__init__config(treelite_available, tmp_path):
     """Test class is initialised with config structure based on lead times and thresholds."""
 
-    result = TrainRainForestsCalibration([36, 24, 12], [0.1, 0.01], tmp_path)
+    result = TrainRainForestsCalibration(
+        [36, 24, 12],
+        [0.1, 0.01],
+        "column1",
+        ["column2", "column3", "column4"],
+        tmp_path,
+    )
 
     # Config is initialised as a nested set of dictionaries
     assert result.config == {
@@ -53,35 +67,26 @@ def test_process_lightgbm(
 ):
     """Test lightgbm models are created."""
 
-    trainer = TrainRainForestsCalibration(lead_times, thresholds, tmp_path)
-
     training_data, fcst_column, obs_column, train_columns = deterministic_training_data
-    result = trainer.process(training_data, obs_column, train_columns)
+
+    trainer = TrainRainForestsCalibration(
+        lead_times, thresholds, obs_column, train_columns, tmp_path
+    )
+
+    result = trainer.process(training_data)
 
     # Config is initialised as a nested set of dictionaries
     # LightGBM paths are present
     assert isinstance(result, Dict)
     assert isinstance(result["24"], Dict)
     assert isinstance(result["24"]["0.0000"], Dict)
-    assert (
-        result["24"]["0.0000"]["lightgbm_model"]
-        == f"{tmp_path}/lightgbm_models/024H_0.0000.txt"
-    )
+    assert result["24"]["0.0000"]["lightgbm_model"] == f"{tmp_path}/024H_0.0000.txt"
     assert isinstance(result["24"]["0.0001"], Dict)
-    assert (
-        result["24"]["0.0001"]["lightgbm_model"]
-        == f"{tmp_path}/lightgbm_models/024H_0.0001.txt"
-    )
+    assert result["24"]["0.0001"]["lightgbm_model"] == f"{tmp_path}/024H_0.0001.txt"
     assert isinstance(result["24"]["0.0010"], Dict)
-    assert (
-        result["24"]["0.0010"]["lightgbm_model"]
-        == f"{tmp_path}/lightgbm_models/024H_0.0010.txt"
-    )
+    assert result["24"]["0.0010"]["lightgbm_model"] == f"{tmp_path}/024H_0.0010.txt"
     assert isinstance(result["24"]["0.0100"], Dict)
-    assert (
-        result["24"]["0.0100"]["lightgbm_model"]
-        == f"{tmp_path}/lightgbm_models/024H_0.0100.txt"
-    )
+    assert result["24"]["0.0100"]["lightgbm_model"] == f"{tmp_path}/024H_0.0100.txt"
 
 
 @pytest.mark.parametrize("available", [False])
@@ -90,12 +95,13 @@ def test_process_treelite_unavailable(
 ):
     """Test treelite models are not created when treelite is not available."""
 
-    trainer = TrainRainForestsCalibration(lead_times, thresholds, tmp_path)
-    assert type(trainer).__name__ == "TrainRainForestsCalibrationLightGBM"
-
     training_data, fcst_column, obs_column, train_columns = deterministic_training_data
 
-    result = trainer.process(training_data, obs_column, train_columns)
+    trainer = TrainRainForestsCalibration(
+        lead_times, thresholds, obs_column, train_columns, tmp_path
+    )
+
+    result = trainer.process(training_data)
 
     # Config is initialised as a nested set of dictionaries
     # LightGBM and Treelite paths are present
@@ -111,28 +117,17 @@ def test_process_treelite_available(
 ):
     """Test treelite models are created when treelite is available."""
 
-    trainer = TrainRainForestsCalibration(lead_times, thresholds, tmp_path)
-    assert type(trainer).__name__ == "TrainRainForestsCalibrationTreelite"
-
     training_data, fcst_column, obs_column, train_columns = deterministic_training_data
 
-    result = trainer.process(training_data, obs_column, train_columns)
+    trainer = TrainRainForestsCalibration(
+        lead_times, thresholds, obs_column, train_columns, tmp_path
+    )
+
+    result = trainer.process(training_data)
 
     # Config is initialised as a nested set of dictionaries
     # LightGBM and Treelite paths are present
-    assert (
-        result["24"]["0.0000"]["treelite_model"]
-        == f"{tmp_path}/treelite_models/024H_0.0000.so"
-    )
-    assert (
-        result["24"]["0.0001"]["treelite_model"]
-        == f"{tmp_path}/treelite_models/024H_0.0001.so"
-    )
-    assert (
-        result["24"]["0.0010"]["treelite_model"]
-        == f"{tmp_path}/treelite_models/024H_0.0010.so"
-    )
-    assert (
-        result["24"]["0.0100"]["treelite_model"]
-        == f"{tmp_path}/treelite_models/024H_0.0100.so"
-    )
+    assert result["24"]["0.0000"]["treelite_model"] == f"{tmp_path}/024H_0.0000.so"
+    assert result["24"]["0.0001"]["treelite_model"] == f"{tmp_path}/024H_0.0001.so"
+    assert result["24"]["0.0010"]["treelite_model"] == f"{tmp_path}/024H_0.0010.so"
+    assert result["24"]["0.0100"]["treelite_model"] == f"{tmp_path}/024H_0.0100.so"
