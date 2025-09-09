@@ -6,11 +6,12 @@ import sys
 
 import pytest
 
-from improver.calibration import treelite_packages_available
+from improver.calibration import lightgbm_package_available, treelite_packages_available
 
 from ..rainforests_calibration.conftest import (
     deterministic_features,
     deterministic_forecast,
+    dummy_lightgbm_models,
     ensemble_features,
     ensemble_forecast,
     lead_times,
@@ -19,13 +20,25 @@ from ..rainforests_calibration.conftest import (
 )
 
 _ = (
-    lead_times,
-    thresholds,
     deterministic_features,
     deterministic_forecast,
+    dummy_lightgbm_models,
     ensemble_features,
     ensemble_forecast,
+    lead_times,
+    prepare_dummy_training_data,
+    thresholds,
 )
+
+dummy_lightgbm_models = dummy_lightgbm_models
+
+
+@pytest.fixture
+def lightgbm_available(available, monkeypatch):
+    available = available and lightgbm_package_available()
+    if not available:
+        monkeypatch.setitem(sys.modules, "lightgbm", None)
+    return available
 
 
 @pytest.fixture
