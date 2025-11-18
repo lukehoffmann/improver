@@ -24,6 +24,10 @@ from iris.cube import Cube, CubeList
 from numpy import ndarray
 
 from improver import PostProcessingPlugin
+from improver.calibration import (
+    lightgbm_package_available,
+    treelite_packages_available,
+)
 from improver.constants import MINUTES_IN_HOUR, SECONDS_IN_MINUTE
 from improver.ensemble_copula_coupling.utilities import (
     get_bounds_of_distribution,
