@@ -51,7 +51,7 @@ class CompileRainForestsModel(BasePlugin):
                 Directory where the compiled Treelite predictor file will be created.
         """
 
-        import tl2cgen
+        # import tl2cgen
         import treelite
 
         # Input validation
@@ -62,9 +62,10 @@ class CompileRainForestsModel(BasePlugin):
 
         output_filepath = output_dir / f"{model_file.stem}{TREELITE_EXTENSION}"
 
-        model = treelite.frontend.load_lightgbm_model(model_file)
+        # model = treelite.frontend.load_lightgbm_model(model_file)
+        model = treelite.Model.load(str(model_file), model_format="lightgbm")
 
-        tl2cgen.export_lib(
+        treelite.export_lib(
             model,
             libpath=output_filepath,
             toolchain=self.toolchain,

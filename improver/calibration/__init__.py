@@ -20,7 +20,7 @@ from improver.utilities.cube_manipulation import MergeCubes
 def treelite_packages_available():
     """Return True if treelite packages are available, False otherwise."""
     try:
-        import tl2cgen  # noqa: F401
+        # import tl2cgen  # noqa: F401
         import treelite  # noqa: F401
     except ModuleNotFoundError:
         return False
