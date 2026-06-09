@@ -4,7 +4,7 @@
 # See LICENSE in the root of the repository for full licensing details.
 """Plugin to train RainForests models.
 
-A detailed description of RainForests appears under the 
+A detailed description of RainForests appears under the
 :doc:`rainforest_calibration module <improver.calibration.rainforest_calibration>`
 
 """
